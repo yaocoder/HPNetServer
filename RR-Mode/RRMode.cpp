@@ -23,7 +23,7 @@ void InitConfigure()
 	std::string current_path;
 	assert(utils::GetCurrentPath(current_path) == true);
 	initConfObj.SetConfigFilePath(std::string(current_path));
-	initConfObj.InitLog4cxx("serverNetCore");
+	initConfObj.InitLog4cxx("RRMode");
 	if (!initConfObj.LoadConfiguration())
 	{
 		LOG4CXX_FATAL(g_logger, "LoadConfiguration failed.");
