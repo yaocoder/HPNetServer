@@ -3,9 +3,11 @@
 #include "config_file.h"
 #include "init_configure.h"
 #include "global_settings.h"
+#include "master_thread.h"
 
 static void InitConfigure();
 static void SettingsAndPrint();
+static void Run();
 
 int main(void)
 {
@@ -13,9 +15,22 @@ int main(void)
 
 	SettingsAndPrint();
 
+	Run();
+
 	return EXIT_SUCCESS;
 }
 
+void Run()
+{
+	CMasterThread masterThread;
+	if(!masterThread.InitMasterThread())
+	{
+		LOG4CXX_FATAL(g_logger, "InitNetCore failed.");
+		exit(EXIT_FAILURE);
+	}
+
+	masterThread.Run();
+}
 
 void InitConfigure()
 {
