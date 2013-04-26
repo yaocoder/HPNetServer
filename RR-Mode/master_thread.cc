@@ -6,18 +6,23 @@
  */
 
 #include "master_thread.h"
+#include "worker_threads.h"
 #include "utils.h"
 #include "global_settings.h"
 #include "socket_wrapper.h"
 
 CMasterThread::CMasterThread()
 {
-	worker_thread_ptr_ = new CWorkerThread;
+	main_base_ 		= NULL;
+	listen_event_	= NULL;
+	remote_listen_socket_ = 0;
+	worker_thread_ptr_ 	  = new CWorkerThread;
 }
 
 CMasterThread::~CMasterThread()
 {
 	utils::SafeDelete(worker_thread_ptr_);
+	event_base_free(main_base_);
 }
 
 bool CMasterThread::CheckLibeventVersion()
@@ -90,6 +95,8 @@ void CMasterThread::Run()
 
 void CMasterThread::AccepCb(evutil_socket_t listen_socket, short event, void* arg)
 {
+	CMasterThread* pThis = static_cast<CMasterThread*>(arg);
+
 	evutil_socket_t sfd;
 	struct sockaddr_in sin;
 	socklen_t slen = sizeof(sin);
@@ -109,8 +116,8 @@ void CMasterThread::AccepCb(evutil_socket_t listen_socket, short event, void* ar
 		return;
 	}
 
-	/* dispatch new client-connection to worker-thread */
-	//CWorkThread::DispatchSfdToWorker(sfd, id_);
+	/* 将客户端新连接分发到各个工作线程 */
+	pThis->worker_thread_ptr_->DispatchSfdToWorker(sfd);
 }
 
 bool CMasterThread::InitRemoteListenSocket(evutil_socket_t& listen_socket)

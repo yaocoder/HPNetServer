@@ -10,6 +10,42 @@
 
 #include <vector>
 #include "defines.h"
+#include "threadSafe_list.h"
+
+#define DATA_BUFFER_SIZE 2048
+
+typedef struct
+{
+	char buf[DATA_BUFFER_SIZE];
+	unsigned int len;
+	int  sfd;
+}LOCAL_REV_DATA;
+
+typedef struct {
+	int sfd;
+}CONN_INFO;
+
+typedef struct {
+    pthread_t 			thread_id;        	/* unique ID of this thread */
+    struct event_base 	*base;    			/* libevent handle this thread uses */
+    struct event 		notify_event;  		/* listen event for notify pipe */
+    int 				notify_receive_fd;  /* receiving end of notify pipe */
+    int 				notify_send_fd;     /* sending end of notify pipe */
+    CThreadSafeList<CONN_INFO> 	list_conn;	/* queue of new connections to handle */
+} LIBEVENT_THREAD;
+
+typedef struct conn conn;
+struct conn {
+    int    sfd;
+    int    id;
+    char*  rBuf;
+    int    rlen;
+    char*  wBuf;
+    int    wlen;
+    conn   *next;     		 /* Used for generating a list of conn structures */
+    LIBEVENT_THREAD *thread; /* Pointer to the thread object serving this connection */
+};
+
 
 class CWorkerThread
 {
@@ -21,16 +57,13 @@ public:
 
 	bool InitThreads(struct event_base* main_base);
 
-	static void DispatchSfdToWorker(int sfd, int id);
+	void DispatchSfdToWorker(int sfd);
 
 private:
 
 	bool SetupThread(LIBEVENT_THREAD* me);
 
-	static void ThreadLibeventProcess(int fd, short event, void* arg);
-
-	static conn *conn_new(const CQ_ITEM* item, LIBEVENT_THREAD* libevent_thread_ptr) ;
-
+	static void ReadPipeCb(int fd, short event, void* arg);
 
 	static void CreateWorker(void *(*func)(void *), void *arg);
 
@@ -42,56 +75,19 @@ private:
 	static void WaitForThreadRegistration(int nthreads);
 
 
-	static void ConnQueueInit(CQ *cq);
-
-	static CQ_ITEM * ConnQueueItemNew(void);
-
-	static void ConnQueuePush(CQ *cq, CQ_ITEM *item);
-
-	static CQ_ITEM* ConnQueuePop(CQ *cq);
-
-	static void ConnQueueItemFree(CQ_ITEM *item);
-
-
-
 	static void ClientTcpReadCb(struct bufferevent *bev, void *arg);
 
 	static void ClientTcpErrorCb(struct bufferevent *bev, short event, void *arg);
 
 
-	static void conn_init(void);
-
-	static conn *conn_from_freelist();
-
-	static bool conn_add_to_freelist(conn *c);
-
-	static void conn_free(conn *c);
-
-	static void conn_close(conn *c, struct bufferevent *bev);
-
 private:
 
-	static std::vector<LIBEVENT_THREAD*> vec_libevent_thread_;
+	std::vector<LIBEVENT_THREAD*> vec_libevent_thread_;
+	int last_thread_;
 
 	static int init_count_;
 	static pthread_mutex_t 	init_lock_;
 	static pthread_cond_t 	init_cond_;
-
-	/* Free list of CQ_ITEM structs */
-	static CQ_ITEM *cqi_freelist;
-	static pthread_mutex_t 	cqi_freelist_lock;
-
-	static int last_thread;
-
-	/*
-	 * Free list management for connections.
-	 */
-
-	static conn **freeconns;
-	static int freetotal;
-	static int freecurr;
-	/* Lock for connection freelist */
-	static pthread_mutex_t conn_lock;
 };
 
 #endif /* CTHREAD_H_ */
