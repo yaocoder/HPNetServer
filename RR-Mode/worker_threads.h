@@ -9,8 +9,9 @@
 #define WORK_THREAD_H_
 
 #include <vector>
+#include <boost/thread.hpp>
 #include "defines.h"
-#include "threadSafe_list.h"
+#include "threadSafe_container.h"
 
 #define DATA_BUFFER_SIZE 2048
 
@@ -34,17 +35,14 @@ typedef struct {
     CThreadSafeList<CONN_INFO> 	list_conn;	/* queue of new connections to handle */
 } LIBEVENT_THREAD;
 
-typedef struct conn conn;
-struct conn {
+typedef struct{
     int    sfd;
-    int    id;
     char*  rBuf;
     int    rlen;
     char*  wBuf;
     int    wlen;
-    conn   *next;     		 /* Used for generating a list of conn structures */
-    LIBEVENT_THREAD *thread; /* Pointer to the thread object serving this connection */
-};
+    LIBEVENT_THREAD *thread; 				/* Pointer to the thread object serving this connection */
+}CONN;
 
 
 class CWorkerThread
@@ -63,22 +61,24 @@ private:
 
 	bool SetupThread(LIBEVENT_THREAD* me);
 
-	static void ReadPipeCb(int fd, short event, void* arg);
-
-	static void CreateWorker(void *(*func)(void *), void *arg);
-
-	static void *WorkerLibevent(void *arg);
-
-
 	static void RegisterThreadInitialized(void);
-
 	static void WaitForThreadRegistration(int nthreads);
 
+	static void ReadPipeCb(int fd, short event, void* arg);
+	static CONN*InitNewConn(const CONN_INFO& conn_info, LIBEVENT_THREAD* libevent_thread_ptr);
+
+	static void CreateWorker(void *(*func)(void *), void *arg);
+	static void *WorkerLibevent(void *arg);
 
 	static void ClientTcpReadCb(struct bufferevent *bev, void *arg);
-
 	static void ClientTcpErrorCb(struct bufferevent *bev, short event, void *arg);
 
+	/* 为了重复利用连接内存资源 */
+	static void InitFreeConns();
+	static CONN *GetConnFromFreelist();
+	static bool AddConnToFreelist(CONN *conn);
+	static void FreeConn(CONN *conn);
+	static void CloseConn(CONN *conn, struct bufferevent *bev);
 
 private:
 
@@ -88,6 +88,12 @@ private:
 	static int init_count_;
 	static pthread_mutex_t 	init_lock_;
 	static pthread_cond_t 	init_cond_;
+
+	static boost::mutex mutex_;
+	static std::vector<CONN*> vec_freeconn_;
+	static int freetotal_;
+	static int freecurr_;
+
 };
 
 #endif /* CTHREAD_H_ */

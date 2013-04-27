@@ -19,6 +19,8 @@
 #include <boost/thread.hpp>
 #include <boost/thread/thread.hpp>
 
+#include <event.h>
+
 #include <log4cxx/logger.h>
 #include <log4cxx/logstring.h>
 #include <log4cxx/propertyconfigurator.h>
@@ -29,7 +31,7 @@ extern LoggerPtr g_logger;
             TypeName(const TypeName&); \
             void operator=(const TypeName&)
 
-#include <event.h>
+
 
 
 

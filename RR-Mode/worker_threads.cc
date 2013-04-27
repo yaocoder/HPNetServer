@@ -14,7 +14,10 @@
 int CWorkerThread::init_count_ = 0;
 pthread_mutex_t	CWorkerThread::init_lock_ = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  CWorkerThread::init_cond_ = PTHREAD_COND_INITIALIZER;
-
+int CWorkerThread::freetotal_ = 0;
+int CWorkerThread::freecurr_  = 0;
+boost::mutex CWorkerThread::mutex_;
+std::vector<CONN*> CWorkerThread::vec_freeconn_;
 
 
 CWorkerThread::CWorkerThread()
@@ -135,9 +138,66 @@ void CWorkerThread::ReadPipeCb(int fd, short event, void* arg)
 	CONN_INFO connInfo = libevent_thread_ptr->list_conn.pop_front();
 
 	/*初始化新连接，将连接事件注册入libevent */
-
+	if(connInfo.sfd != 0)
+	{
+		CONN* conn = InitNewConn(connInfo, libevent_thread_ptr);
+		if(NULL == conn)
+		{
+			LOG4CXX_ERROR(g_logger, "CWorkerThread::ReadPipeCb:Can't listen for events on sfd = " << connInfo.sfd);
+			close(connInfo.sfd);
+		}
+	}
 }
 
+CONN* CWorkerThread::InitNewConn(const CONN_INFO& conn_info, LIBEVENT_THREAD* libevent_thread_ptr)
+{
+	CONN* conn = GetConnFromFreelist();
+	if (NULL == conn)
+	{
+		conn = new CONN;
+		if (NULL == conn)
+		{
+			LOG4CXX_ERROR(g_logger, "CWorkerThread::InitNewConn:new conn error.");
+			return NULL;
+		}
+
+		try
+		{
+			conn->rBuf = new char[DATA_BUFFER_SIZE];
+			conn->wBuf = new char[DATA_BUFFER_SIZE];
+		} catch (std::bad_alloc &)
+		{
+			FreeConn(conn);
+			LOG4CXX_ERROR(g_logger, "CWorkerThread::InitNewConn:new buf error.");
+			return NULL;
+		}
+	}
+
+	conn->sfd = conn_info.sfd;
+	conn->rlen = 0;
+	conn->wlen = 0;
+	conn->thread = libevent_thread_ptr;
+
+	/* 将新连接加入此线程libevent事件循环 */
+	int flag = EV_READ | EV_PERSIST;
+	struct bufferevent *client_tcp_event = bufferevent_socket_new(libevent_thread_ptr->base, conn->sfd, BEV_OPT_CLOSE_ON_FREE);
+	if (NULL == client_tcp_event)
+	{
+		if(!AddConnToFreelist(conn))
+		{
+			FreeConn(conn);
+		}
+		int error_code = EVUTIL_SOCKET_ERROR();
+		LOG4CXX_ERROR(g_logger,
+				"CWorkerThread::conn_new:bufferevent_socket_new errorCode = " << error_code << ", description = " << evutil_socket_error_to_string(error_code));
+
+		return NULL;
+	}
+	bufferevent_setcb(client_tcp_event, ClientTcpReadCb, NULL, ClientTcpErrorCb, (void*) conn);
+	bufferevent_enable(client_tcp_event, flag);
+
+	return conn;
+}
 
 
 void CWorkerThread::ClientTcpReadCb(struct bufferevent *bev, void *arg)
@@ -190,5 +250,73 @@ void CWorkerThread::WaitForThreadRegistration(int nthreads)
     pthread_mutex_unlock(&init_lock_);
 }
 
+void CWorkerThread::InitFreeConns()
+{
+	freetotal_ 	= 200;
+	freecurr_	= 0;
 
+	vec_freeconn_.resize(freetotal_);
+}
 
+CONN* CWorkerThread::GetConnFromFreelist()
+{
+	CONN *conn = NULL;
+
+	boost::mutex::scoped_lock Lock(mutex_);
+	if(freecurr_ > 0)
+	{
+		conn = vec_freeconn_.at(--freecurr_);
+	}
+
+	return conn;
+}
+
+bool CWorkerThread::AddConnToFreelist(CONN* conn)
+{
+	bool ret = false;
+	boost::mutex::scoped_lock Lock(mutex_);
+	if (freecurr_ < freetotal_)
+	{
+		vec_freeconn_.at(freecurr_++) = conn;
+		ret = true;
+	}
+	else
+	{
+		/* 增大连接内存池队列 */
+		size_t newsize = freetotal_ * 2;
+		vec_freeconn_.resize(newsize);
+		freetotal_ = newsize;
+		vec_freeconn_.at(freecurr_++) = conn;
+		ret = true;
+	}
+
+	return ret;
+}
+
+void CWorkerThread::FreeConn(CONN* conn)
+{
+	if (conn)
+	{
+		utils::SafeDeleteArray(conn->rBuf);
+		utils::SafeDeleteArray(conn->wBuf);
+		utils::SafeDelete (conn);
+	}
+}
+
+void CWorkerThread::CloseConn(CONN* conn, struct bufferevent* bev)
+{
+	assert(conn != NULL);
+
+	/* 清理资源：the event, the socket and the conn */
+	bufferevent_free(bev);
+
+	LOG4CXX_TRACE(g_logger, "CWorkerThread::conn_close sfd = " << conn->sfd);
+
+	/* if the connection has big buffers, just free it */
+	if (AddConnToFreelist (conn))
+	{
+		FreeConn(conn);
+	}
+
+	return;
+}

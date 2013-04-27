@@ -83,3 +83,4 @@ private:
 	std::list<T> list_;
 	T t_object_;
 };
+
