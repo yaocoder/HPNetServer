@@ -36,7 +36,11 @@ void InitConfigure()
 {
 	CInitConfig initConfObj;
 	std::string current_path;
-	assert(utils::GetCurrentPath(current_path) == true);
+	if(!utils::GetCurrentPath(current_path))
+	{
+		LOG4CXX_FATAL(g_logger, "GetCurrentPath failed.");
+		exit(EXIT_FAILURE);
+	}
 	initConfObj.SetConfigFilePath(std::string(current_path));
 	initConfObj.InitLog4cxx("RRMode");
 	if (!initConfObj.LoadConfiguration())
