@@ -9,11 +9,10 @@
 #include "global_settings.h"
 #include "utils.h"
 
-#define ITEMS_PER_ALLOC 64
-
 int CWorkerThread::init_count_ = 0;
 pthread_mutex_t	CWorkerThread::init_lock_ = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  CWorkerThread::init_cond_ = PTHREAD_COND_INITIALIZER;
+
 int CWorkerThread::freetotal_ = 0;
 int CWorkerThread::freecurr_  = 0;
 boost::mutex CWorkerThread::mutex_;
@@ -58,8 +57,6 @@ bool CWorkerThread::InitThreads(struct event_base* main_base)
 		vec_libevent_thread_.push_back(libevent_thread_ptr);
 	}
 
-	LOG4CXX_INFO(g_logger, "Create threads success. we will done all the libevent setup.");
-
 	for (unsigned int i = 0; i < utils::G<CGlobalSettings>().thread_num_; i++)
 	{
 		CreateWorker(WorkerLibevent, vec_libevent_thread_.at(i));
@@ -67,6 +64,8 @@ bool CWorkerThread::InitThreads(struct event_base* main_base)
 
 	 /* 等待所有线程都已经启动完毕. */
 	WaitForThreadRegistration(utils::G<CGlobalSettings>().thread_num_);
+
+	LOG4CXX_INFO(g_logger, "Create threads success. we hava done all the libevent setup.");
 
 	return true;
 }
@@ -202,14 +201,47 @@ CONN* CWorkerThread::InitNewConn(const CONN_INFO& conn_info, LIBEVENT_THREAD* li
 
 void CWorkerThread::ClientTcpReadCb(struct bufferevent *bev, void *arg)
 {
+	CONN* conn = static_cast<CONN*>(arg);
 
+	int recv_size = 0;
+	if ((recv_size = bufferevent_read(bev, conn->rBuf + conn->rlen, DATA_BUFFER_SIZE - conn->rlen)) > 0)
+	{
+		conn->rlen = conn->rlen + recv_size;
+	}
+
+	if (memchr(conn->rBuf, '\n', conn->rlen) != NULL)
+	{
+		char* temp = strchr(conn->rBuf, '\n');
+		*temp = '\0';
+
+		LOG4CXX_TRACE(g_logger, "CWorkerThread::ClientTcpReadCb:buf = " << conn->rBuf);
+
+		int len = strlen(conn->rBuf) + 2;
+		memmove(conn->rBuf, conn->rBuf + len, conn->rlen - len);
+		conn->rlen = conn->rlen - len;
+	}
 }
 
 void CWorkerThread::ClientTcpErrorCb(struct bufferevent *bev, short event, void *arg)
 {
+	CONN* conn = static_cast<CONN*>(arg);
 
+	if (event & BEV_EVENT_TIMEOUT)
+	{
+		LOG4CXX_WARN(g_logger, "CWorkerThread::ClientTcpErrorCb:TimeOut.");
+	}
+	else if (event & BEV_EVENT_EOF)
+	{
+	}
+	else if (event & BEV_EVENT_ERROR)
+	{
+		int error_code = EVUTIL_SOCKET_ERROR();
+		LOG4CXX_WARN(g_logger,
+				"CWorkerThread::ClientTcpErrorCb:some other errorCode = " << error_code << ", description = " << evutil_socket_error_to_string(error_code));
+	}
+
+	CloseConn(conn, bev);
 }
-
 
 void CWorkerThread::DispatchSfdToWorker(int sfd)
 {
@@ -313,7 +345,7 @@ void CWorkerThread::CloseConn(CONN* conn, struct bufferevent* bev)
 	LOG4CXX_TRACE(g_logger, "CWorkerThread::conn_close sfd = " << conn->sfd);
 
 	/* if the connection has big buffers, just free it */
-	if (AddConnToFreelist (conn))
+	if (!AddConnToFreelist (conn))
 	{
 		FreeConn(conn);
 	}
