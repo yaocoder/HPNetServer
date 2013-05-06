@@ -4,7 +4,6 @@
 template<typename T>
 class CThreadSafeList
 {
-
 public:
 	CThreadSafeList() {}
 	~CThreadSafeList() 
@@ -22,17 +21,17 @@ public:
 		list_.push_back(pt);
 	}
 
-	T pop_front() 
+	bool pop_front(T &pt)
 	{
 		boost::mutex::scoped_lock oLock(mutex_);
 		if (list_.size() > 0) 
 		{
-			T oThread = list_.front();
+			pt = list_.front();
 			list_.pop_front();
-			return oThread;
+			return true;
 		}
 
-		return t_object_;
+		return false;
 	}
 
 	void earse(T &Object) 
@@ -43,12 +42,12 @@ public:
 		{
 			if (Object == *it) 
 			{
-				list_.erase(it++);
+				list_.erase(it);
 				break;
 			}
 			else 
 			{
-				++it;
+				it++;
 			}
 		}
 	}
@@ -76,11 +75,8 @@ public:
 		return list_.empty();
 	}
 
-public:
-	boost::mutex mutex_;
 
 private:
 	std::list<T> list_;
-	T t_object_;
+	boost::mutex mutex_;
 };
-

@@ -134,7 +134,12 @@ void CWorkerThread::ReadPipeCb(int fd, short event, void* arg)
 	}
 
 	/* 将主线程塞到队列中的连接pop出来 */
-	CONN_INFO connInfo = libevent_thread_ptr->list_conn.pop_front();
+	CONN_INFO connInfo;
+	if(!libevent_thread_ptr->list_conn.pop_front(connInfo))
+	{
+		LOG4CXX_ERROR(g_logger, "CWorkerThread::ThreadLibeventProcess:list_conn.pop_front NULL.");
+		return;
+	}
 
 	/*初始化新连接，将连接事件注册入libevent */
 	if(connInfo.sfd != 0)
@@ -211,14 +216,7 @@ void CWorkerThread::ClientTcpReadCb(struct bufferevent *bev, void *arg)
 
 	if (memchr(conn->rBuf, '\n', conn->rlen) != NULL)
 	{
-		char* temp = strchr(conn->rBuf, '\n');
-		*temp = '\0';
-
-		LOG4CXX_TRACE(g_logger, "CWorkerThread::ClientTcpReadCb:buf = " << conn->rBuf);
-
-		int len = strlen(conn->rBuf) + 2;
-		memmove(conn->rBuf, conn->rBuf + len, conn->rlen - len);
-		conn->rlen = conn->rlen - len;
+		//TODO:
 	}
 }
 
