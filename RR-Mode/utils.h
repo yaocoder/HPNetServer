@@ -28,6 +28,7 @@
 #include <boost/filesystem.hpp>
 using namespace std;
 
+
 namespace utils
 {
 
@@ -44,6 +45,27 @@ static inline bool GetCurrentPath(std::string& current_path)
 		cout << "current_path : " << current_path << ", error description :" << e.what() << endl;
 		return false;
 	}
+}
+
+static inline void SplitData(const std::string& str, const std::string& delimiter, std::vector<std::string>& vec_data)
+{
+	std::string s = str;
+	size_t pos = 0;
+	std::string token;
+	while ((pos = s.find(delimiter)) != std::string::npos)
+	{
+		token = s.substr(0, pos);
+		vec_data.push_back(token);
+		s.erase(0, pos + delimiter.length());
+	}
+}
+
+static inline bool FindCRLF(const std::string& s)
+{
+	if(s.find("\r\n") != std::string::npos)
+		return true;
+	else
+		return false;
 }
 
 static inline std::string int2str(int v)

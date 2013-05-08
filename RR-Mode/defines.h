@@ -32,6 +32,7 @@ extern LoggerPtr g_logger;
             void operator=(const TypeName&)
 
 
+#define CRLF "\r\n"
 
 
 

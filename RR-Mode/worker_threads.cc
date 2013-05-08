@@ -8,6 +8,7 @@
 #include "worker_threads.h"
 #include "global_settings.h"
 #include "utils.h"
+#include "socket_wrapper.h"
 
 int CWorkerThread::init_count_ = 0;
 pthread_mutex_t	CWorkerThread::init_lock_ = PTHREAD_MUTEX_INITIALIZER;
@@ -31,6 +32,8 @@ CWorkerThread::~CWorkerThread()
 /* 初始化worker线程池 */
 bool CWorkerThread::InitThreads(struct event_base* main_base)
 {
+
+	InitFreeConns();
 
 	LOG4CXX_INFO(g_logger, "Initializes worker threads...");
 
@@ -150,6 +153,7 @@ void CWorkerThread::ReadPipeCb(int fd, short event, void* arg)
 			LOG4CXX_ERROR(g_logger, "CWorkerThread::ReadPipeCb:Can't listen for events on sfd = " << connInfo.sfd);
 			close(connInfo.sfd);
 		}
+		LOG4CXX_TRACE(g_logger, "CWorkerThread::ReadPipeCb thread id = " << conn->thread->thread_id);
 	}
 }
 
@@ -207,6 +211,7 @@ CONN* CWorkerThread::InitNewConn(const CONN_INFO& conn_info, LIBEVENT_THREAD* li
 void CWorkerThread::ClientTcpReadCb(struct bufferevent *bev, void *arg)
 {
 	CONN* conn = static_cast<CONN*>(arg);
+	assert(conn != NULL);
 
 	int recv_size = 0;
 	if ((recv_size = bufferevent_read(bev, conn->rBuf + conn->rlen, DATA_BUFFER_SIZE - conn->rlen)) > 0)
@@ -214,9 +219,24 @@ void CWorkerThread::ClientTcpReadCb(struct bufferevent *bev, void *arg)
 		conn->rlen = conn->rlen + recv_size;
 	}
 
-	if (memchr(conn->rBuf, '\n', conn->rlen) != NULL)
+	std::string str_recv(conn->rBuf, conn->rlen);
+	if (utils::FindCRLF(str_recv))
 	{
-		//TODO:
+		/* 有可能同时收到多条信息 */
+		std::vector<std::string> vec_str;
+		utils::SplitData(str_recv, CRLF, vec_str);
+
+		for (unsigned int i = 0; i < vec_str.size(); ++i)
+		{
+			if(!SocketOperate::WriteSfd(conn->sfd, vec_str.at(i).c_str(), vec_str.at(i).length()))
+			{
+				LOG4CXX_ERROR(g_logger, "CWorkerThread::ClientTcpReadCb:send sfd .error = " << strerror(errno));
+			}
+		}
+
+		int len = str_recv.find_last_of(CRLF) + 1;
+		memmove(conn->rBuf, conn->rBuf + len, DATA_BUFFER_SIZE - len);
+		conn->rlen = conn->rlen - len;
 	}
 }
 
