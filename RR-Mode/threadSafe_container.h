@@ -37,19 +37,7 @@ public:
 	void earse(T &Object) 
 	{
 		boost::mutex::scoped_lock oLock(mutex_);
-		typedef typename std::list<T>::iterator iter_thread;
-		for (iter_thread it = list_.begin(); it != list_.end();) 
-		{
-			if (Object == *it) 
-			{
-				list_.erase(it);
-				break;
-			}
-			else 
-			{
-				it++;
-			}
-		}
+		list_.remove(Object);
 	}
 
 	void clear()
