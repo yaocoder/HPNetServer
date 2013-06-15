@@ -1,9 +1,9 @@
 #include "defines.h"
-#include "utils.h"
 #include "config_file.h"
-#include "init_configure.h"
 #include "global_settings.h"
 #include "master_thread.h"
+#include "init_configure.h"
+#include "utils.h"
 
 static void InitConfigure();
 static void SettingsAndPrint();

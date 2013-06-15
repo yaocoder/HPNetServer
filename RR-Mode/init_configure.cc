@@ -6,9 +6,8 @@
  */
 
 #include "init_configure.h"
-#include "defines.h"
-#include "utils.h"
 #include "config_file.h"
+#include "utils.h"
 
 #define LOG_CON_FILE        "/conf/log.conf"
 #define CONF_FILE        	"/conf/config.ini"

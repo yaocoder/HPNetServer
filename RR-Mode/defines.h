@@ -9,11 +9,11 @@
 #define DEFINES_H_
 
 #include <assert.h>
-#include <string.h>
+#include <arpa/inet.h>
+#include <errno.h>
 #include <pthread.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <arpa/inet.h>
+#include <string.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>

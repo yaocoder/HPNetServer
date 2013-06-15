@@ -15,19 +15,16 @@
 #ifndef UTILS_H__
 #define UTILS_H__
 
-#include <iostream>
-#include <algorithm>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
-#include <exception>
+#include <netinet/in.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include <netinet/in.h>
-#include <vector>
+#include <algorithm>
+#include <exception>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 #include <boost/filesystem.hpp>
 using namespace std;
-
 
 namespace utils
 {

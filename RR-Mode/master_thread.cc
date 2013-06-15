@@ -6,9 +6,9 @@
  */
 
 #include "master_thread.h"
-#include "worker_threads.h"
-#include "utils.h"
 #include "global_settings.h"
+#include "utils.h"
+#include "worker_threads.h"
 #include "socket_wrapper.h"
 
 CMasterThread::CMasterThread()

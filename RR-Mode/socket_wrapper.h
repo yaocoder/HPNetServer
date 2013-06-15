@@ -15,12 +15,14 @@
 #ifndef SOCKET_WRAPPER_H__
 #define SOCKET_WRAPPER_H__
 
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/types.h>
-#include <netinet/tcp.h>
 #include <fcntl.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+
+
 #define		BACKLOG     50
 
 namespace SocketOperate
