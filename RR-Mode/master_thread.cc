@@ -49,7 +49,7 @@ bool CMasterThread::InitMasterThread()
 	main_base_ = event_base_new();
 	assert(main_base_ != NULL);
 
-	/* 监听来自客户端的短连接 */
+	/* 监听来自客户端的连接 */
 	if(!InitRemoteListenSocket(remote_listen_socket_))
 		return false;
 
