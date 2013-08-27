@@ -1,17 +1,3 @@
-/**
- * @created:	   		2012/05/18
- *
- * @file				SecuService\socket_wrapper.h
- *
- * @author  			wei yao <yaocoder@gmail.com>
- *
- * @version 			1.0
- *
- * @LICENSE
- *
- * @brief				对socket操作的封装处理
- *
- */
 #ifndef SOCKET_WRAPPER_H__
 #define SOCKET_WRAPPER_H__
 
