@@ -137,27 +137,6 @@ bool CMasterThread::InitRemoteListenSocket(evutil_socket_t& listen_socket)
 		return false;
 	}
 
-	if (setsockopt(listen_socket, SOL_SOCKET, SO_KEEPALIVE, (void *) &flags, sizeof(flags)) != 0)
-	{
-		LOG4CXX_ERROR(g_logger, "CMasterThread::InitRemoteListenSocket:setsockopt SO_KEEPALIVE error = " << strerror(errno));
-		close(listen_socket);
-		return false;
-	}
-
-	struct linger ling = { 0, 0 };
-	if (setsockopt(listen_socket, SOL_SOCKET, SO_LINGER, (void *) &ling, sizeof(ling)) != 0)
-	{
-		LOG4CXX_ERROR(g_logger, "CMasterThread::InitRemoteListenSocket:setsockopt SO_LINGER error = " << strerror(errno));
-		close(listen_socket);
-		return false;
-	}
-
-	if (setsockopt(listen_socket, IPPROTO_TCP, TCP_NODELAY, (void *) &flags, sizeof(flags)) != 0)
-	{
-		LOG4CXX_ERROR(g_logger, "CMasterThread::InitRemoteListenSocket:setsockopt TCP_NODELAY error = " << strerror(errno));
-		close(listen_socket);
-		return false;
-	}
 
 	sockaddr_in servaddr;
 	bzero(&servaddr, sizeof(servaddr));
