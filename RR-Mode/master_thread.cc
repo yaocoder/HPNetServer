@@ -137,6 +137,12 @@ bool CMasterThread::InitRemoteListenSocket(evutil_socket_t& listen_socket)
 		return false;
 	}
 
+	if (setsockopt(listen_socket, IPPROTO_TCP, TCP_NODELAY, (void *) &flags, sizeof(flags)) != 0)
+	{
+		LOG4CXX_ERROR(g_logger, "CMasterThread::InitRemoteListenSocket:setsockopt TCP_NODELAY error = " << strerror(errno));
+		close(listen_socket);
+		return false;
+	}
 
 	sockaddr_in servaddr;
 	bzero(&servaddr, sizeof(servaddr));
