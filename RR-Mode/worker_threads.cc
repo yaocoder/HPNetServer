@@ -217,6 +217,22 @@ void CWorkerThread::ClientTcpReadCb(struct bufferevent *bev, void *arg)
 	if ((recv_size = bufferevent_read(bev, conn->rBuf + conn->rlen, DATA_BUFFER_SIZE - conn->rlen)) > 0)
 	{
 		conn->rlen = conn->rlen + recv_size;
+		//防止恶意连接，进行token校验，不满足校验条件的为恶意连接，直接关闭
+		if (conn->rlen >= TOKEN_LENGTH && conn->isVerify == false)
+		{
+			conn->isVerify = true;
+			std::string str_verify(conn->rBuf, TOKEN_LENGTH);
+			if (str_verify.compare(std::string(TOKEN_STR)) != 0)
+			{
+				LOG4CXX_WARN(g_logger, "CWorkerThread::ClientTcpReadCb DDOS. str = " << str_verify);
+				CloseConn(conn, bev);
+				return;
+			} else
+			{
+				conn->rlen = conn->rlen - TOKEN_LENGTH;
+				memmove(conn->rBuf, conn->rBuf + TOKEN_LENGTH, conn->rlen);
+			}
+		}
 	}
 
 	std::string str_recv(conn->rBuf, conn->rlen);

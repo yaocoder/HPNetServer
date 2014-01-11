@@ -41,6 +41,7 @@ typedef struct{
     int    rlen;
     char*  wBuf;
     int    wlen;
+    bool   isVerify;
     LIBEVENT_THREAD *thread; 				/* Pointer to the thread object serving this connection */
 }CONN;
 
