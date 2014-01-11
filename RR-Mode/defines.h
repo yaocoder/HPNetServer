@@ -35,6 +35,6 @@ extern LoggerPtr g_logger;
 #define CRLF "\r\n"
 
 #define TOKEN_LENGTH 5
-#define TOKEN_STR	 "@#1$6"
+#define TOKEN_STR	 "12345"
 
 #endif /* DEFINES_H_ */
