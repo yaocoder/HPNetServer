@@ -23,8 +23,8 @@
 
 在profile文件中添加ulimit修改。在/etc/profile文件最后添加  
 
-> \#add the max filefds  
->  ulimit -SHn 384469
+ > \#add the max filefds  
+ >  ulimit -SHn 384469
 
 然后source /etc/profile 使之生效。
 
