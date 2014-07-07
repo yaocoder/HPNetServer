@@ -1,3 +1,4 @@
+#include <signal.h>
 #include "defines.h"
 #include "config_file.h"
 #include "global_settings.h"
@@ -8,12 +9,19 @@
 static void InitConfigure();
 static void SettingsAndPrint();
 static void Run();
+static void SigUsr(int signo);
 
 int main(void)
 {
 	InitConfigure();
 
 	SettingsAndPrint();
+
+	if (signal(SIGUSR1, SigUsr) == SIG_ERR )
+	{
+		LOG4CXX_FATAL(g_logger, "Configure signal failed.");
+		exit(EXIT_FAILURE);
+	}
 
 	Run();
 
@@ -30,6 +38,18 @@ void Run()
 	}
 
 	masterThread.Run();
+}
+
+void SigUsr(int signo)
+{
+	if(signo == SIGUSR1)
+	{
+		/* 重新加载应用配置文件（仅仅是连接超时时间），log4cxx日志配置文件*/
+		InitConfigure();
+		SettingsAndPrint();
+		LOG4CXX_INFO(g_logger, "reload configure.");
+		return;
+	}
 }
 
 void InitConfigure()
