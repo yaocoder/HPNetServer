@@ -58,13 +58,30 @@ namespace SocketOperate
 	static inline bool WriteSfd(const int sfd, const char* buf, const int buf_len)
 	{
 		int write_len = 0;
-		while(write_len != buf_len)
+		while (write_len < buf_len)
 		{
 			int len = 0;
-			len = write(sfd, buf, buf_len - write_len);
-			if(len < 0)
+			len = write(sfd, buf + write_len, buf_len - write_len);
+			if (len < 0)
+			{
+				if (errno == EINTR)
+				{
+					continue;
+				} 
+				else if (errno == EAGAIN) /* EAGAIN : Resource temporarily unavailable*/
+				{
+					sleep(0.1);
+					continue;
+				} 
+				else
+				{
 				return false;
-			write_len = write_len + len;
+				}
+			}
+			else
+			{
+				write_len = write_len + len;
+			}
 		}
 		return true;
 	}
