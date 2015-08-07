@@ -202,6 +202,13 @@ CONN* CWorkerThread::InitNewConn(const CONN_INFO& conn_info, LIBEVENT_THREAD* li
 		return NULL;
 	}
 	bufferevent_setcb(client_tcp_event, ClientTcpReadCb, NULL, ClientTcpErrorCb, (void*) conn);
+
+	/* 利用客户端心跳超时机制处理半开连接 */
+	struct timeval heartbeat_sec;
+	heartbeat_sec.tv_sec = utils::G<CGlobalSettings>().client_heartbeat_timeout_;
+	heartbeat_sec.tv_usec= 0;
+	bufferevent_set_timeouts(client_tcp_event, &heartbeat_sec, NULL);
+
 	bufferevent_enable(client_tcp_event, flag);
 
 	return conn;
