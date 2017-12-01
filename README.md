@@ -12,7 +12,6 @@ highPerformanceNetworkServer
 * **linux内核版本**: 2.6.32-279.el6.x86_64 
 * **gcc 版本**: 4.4.6
 * **[libevent](http://libevent.org/)版本**: 2.0.21
-* 
 
 **测试结果**:
 
@@ -32,9 +31,9 @@ highPerformanceNetworkServer
 
 **配和客户端库使用**
 * [RPC_Framework: 基于TCP协议的远程过程调用框架——客户端](https://github.com/yaocoder/RPC_Framework) 
-1. 客户端和服务端均分为业务层，协议层（JSON），网络层（libevent），可以根据自己的业务定制每一层的接口；
+  1. 客户端和服务端均分为业务层，协议层（JSON），网络层（libevent），可以根据自己的业务定制每一层的接口；
 
-2. 客户端实现了与服务端的短连接请求，长连接请求，服务端的推送消息；
+  2. 客户端实现了与服务端的短连接请求，长连接请求，服务端的推送消息；
 
-3. 客户端提供跨平台的支持，目前已经经过windows，linux，android，ios的测试；
+  3. 客户端提供跨平台的支持，目前已经经过windows，linux，android，ios的测试；
 
