@@ -30,11 +30,11 @@ highPerformanceNetworkServer
 * [我的网络开发之旅——socket编程](http://yaocoder.blog.51cto.com/2668309/1556742)
 
 **将其改造为网关服务实现的一个简单微服务框架**
-* 开源项目——[simple_microservices_framework](https://github.com/yaocoder/simple_microservices_framework)
+* 演化开源项目——[simple_microservices_framework](https://github.com/yaocoder/simple_microservices_framework)
 ：包括一个网关（类似于Nginx，承载前端网络层处理、后端微服务调度等），一个后端应用微服务示例
 
 **配和客户端库使用**
-* 开源项目——[RPC_Framework: 基于TCP协议的远程过程调用框架（客户端）](https://github.com/yaocoder/RPC_Framework) 
+* 配套开源项目——[RPC_Framework: 基于TCP协议的远程过程调用框架（客户端）](https://github.com/yaocoder/RPC_Framework) 
   1. 客户端和服务端均分为业务层，协议层（JSON），网络层（libevent），可以根据自己的业务定制每一层的接口；
 
   2. 客户端实现了与服务端的短连接请求，长连接请求，服务端的推送消息；
