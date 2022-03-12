@@ -3,7 +3,7 @@ highPerformanceNetworkServer
 -----
 **目标**: 高性能TCP网络服务器程序  
 
-**简介**: 程序架构采用[master-worker模型](http://yaocoder.blog.51cto.com/2668309/1170944)，并利用libevent网络库来实现one loop per thread(一个事件循环一个线程)的IO模型。  
+**简介**: 程序架构采用[master-worker模型](http://yaocoder.blog.51cto.com/2668309/1170944)，并利用libevent网络库来实现one loop per thread(一个事件循环一个线程)的IO模型，采用Round-Robin轮询调度模式。  
   
   
 * **支持平台**: x86-64 linux  
