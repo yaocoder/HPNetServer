@@ -4,7 +4,8 @@ high Performance Network Server
 **目标**: 高性能TCP网络服务器程序  
 
 **简介**: 程序架构采用[master-worker模型](http://yaocoder.blog.51cto.com/2668309/1170944)，并利用libevent网络库来实现one loop per thread(一个事件循环一个线程)的IO模型，采用Round-Robin轮询调度模式。  
-  
+* 对于tcp长连接，根据业务实时做更新，在10万级并发连接（加20s心跳），服务端可以轻松应对，资源消耗小。
+* 对于tcp短连接，单实例压测5000并发无数据库访问，响应时间在100ms以下。
   
 * **支持平台**: x86-64 linux  
 * **开发语言**: C++  
@@ -12,11 +13,6 @@ high Performance Network Server
 * **linux内核版本**: 2.6.32-279.el6.x86_64 
 * **gcc 版本**: 4.4.6
 * **[libevent](http://libevent.org/)版本**: 2.0.21
-
-**测试结果**:
-
-* 对于tcp短连接以简单的请求——回应进行测试，10万个请求，平均响应时间约为16ms。
-* 对于tcp长连接，根据业务实时做更新，目前10万级并发连接（加20s心跳），服务端可以轻松应对，资源消耗很小。
 
 
 **参考文章**
